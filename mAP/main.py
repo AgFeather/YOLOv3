@@ -55,7 +55,7 @@ if not args.no_plot:
   except ImportError:
     print("\"matplotlib\" not found, please install it to get the resulting plots.")
     args.no_plot = True
- 
+    
 """
  throw error and exit
 """
