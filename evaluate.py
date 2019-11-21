@@ -148,7 +148,6 @@ class YoloTest(object):
                         print('\t' + str(bbox_mess).strip())
 
     def voc_2012_test(self, voc2012_test_path):
-
         img_inds_file = os.path.join(voc2012_test_path, 'ImageSets', 'Main',
                                      'test.txt')
         with open(img_inds_file, 'r') as f:

@@ -1,16 +1,3 @@
-#! /usr/bin/env python
-# coding=utf-8
-#================================================================
-#   Copyright (C) 2019 * Ltd. All rights reserved.
-#
-#   Editor      : VIM
-#   File name   : image_demo.py
-#   Author      : YunYang1994
-#   Created date: 2019-01-20 16:06:06
-#   Description :
-#
-#================================================================
-
 import cv2
 import numpy as np
 import core.utils as utils
@@ -32,11 +19,28 @@ image_data = image_data[np.newaxis, ...]
 
 return_tensors = utils.read_pb_return_tensors(graph, pb_file, return_elements)
 
-
 with tf.Session(graph=graph) as sess:
     pred_sbbox, pred_mbbox, pred_lbbox = sess.run(
         [return_tensors[1], return_tensors[2], return_tensors[3]],
                 feed_dict={ return_tensors[0]: image_data})
+
+print(pred_sbbox.shape)
+print(pred_mbbox.shape)
+print(pred_lbbox.shape)
+temp = np.reshape(pred_lbbox, (13 * 13 * 3, 85))
+temp = temp[:, :4]
+print(temp)
+print('--------------')
+temp = np.reshape(pred_mbbox, (26 * 26 *3, 85))
+temp = temp[:, :4]
+print(temp)
+print('--------------')
+temp = np.reshape(pred_sbbox, (52 * 52 * 3, 85))
+temp = temp[:, :4]
+print(temp)
+print('--------------')
+exit(0)
+
 
 pred_bbox = np.concatenate([np.reshape(pred_sbbox, (-1, 5 + num_classes)),
                             np.reshape(pred_mbbox, (-1, 5 + num_classes)),

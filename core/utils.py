@@ -31,18 +31,20 @@ def image_preporcess(image, target_size, gt_boxes=None):
     h, w, _ = image.shape
 
     scale = min(iw / w, ih / h)
-    nw, nh = int(scale * w), int(scale * h)
+    nw, nh = int(scale * w), int(scale * h) # 计算缩放后图片尺寸
     image_resized = cv2.resize(image, (nw, nh))
 
+    # 制作一张画布，画布的尺寸就是我们想要的尺寸
     image_paded = np.full(shape=[ih, iw, 3], fill_value=128.0)
     dw, dh = (iw - nw) // 2, (ih - nh) // 2
+    # 将缩放后的图片放在画布中央
     image_paded[dh:nh + dh, dw:nw + dw, :] = image_resized
     image_paded = image_paded / 255.
 
     if gt_boxes is None:
         return image_paded
 
-    else:
+    else:# 训练网络时需要对 groudtruth box 进行矫正
         gt_boxes[:, [0, 2]] = gt_boxes[:, [0, 2]] * scale + dw
         gt_boxes[:, [1, 3]] = gt_boxes[:, [1, 3]] * scale + dh
         return image_paded, gt_boxes
@@ -168,36 +170,33 @@ def nms(bboxes, iou_threshold, sigma=0.3, method='nms'):
 
 
 def postprocess_boxes(pred_bbox, org_img_shape, input_size, score_threshold):
-
+    """对一张图片进行后处理"""
     valid_scale = [0, np.inf]
     pred_bbox = np.array(pred_bbox)
-
     pred_xywh = pred_bbox[:, 0:4]
     pred_conf = pred_bbox[:, 4]
     pred_prob = pred_bbox[:, 5:]
 
-    # # (1) (x, y, w, h) --> (xmin, ymin, xmax, ymax)
+    # (1) (x, y, w, h) --> (xmin, ymin, xmax, ymax)
     pred_coor = np.concatenate([
         pred_xywh[:, :2] - pred_xywh[:, 2:] * 0.5,
         pred_xywh[:, :2] + pred_xywh[:, 2:] * 0.5
-    ],
-                               axis=-1)
-    # # (2) (xmin, ymin, xmax, ymax) -> (xmin_org, ymin_org, xmax_org, ymax_org)
-    org_h, org_w = org_img_shape
-    resize_ratio = min(input_size / org_w, input_size / org_h)
+    ], axis=-1)
 
+    # (2) (xmin, ymin, xmax, ymax) -> (xmin_org, ymin_org, xmax_org, ymax_org)
+    org_h, org_w = org_img_shape
+    resize_ratio = min(input_size / org_w, input_size / org_h) # 预处理时图片缩放比率
     dw = (input_size - resize_ratio * org_w) / 2
     dh = (input_size - resize_ratio * org_h) / 2
 
     pred_coor[:, 0::2] = 1.0 * (pred_coor[:, 0::2] - dw) / resize_ratio
     pred_coor[:, 1::2] = 1.0 * (pred_coor[:, 1::2] - dh) / resize_ratio
 
-    # # (3) clip some boxes those are out of range
+    # (3) clip some boxes which are out of range
     pred_coor = np.concatenate([
         np.maximum(pred_coor[:, :2], [0, 0]),
         np.minimum(pred_coor[:, 2:], [org_w - 1, org_h - 1])
-    ],
-                               axis=-1)
+    ], axis=-1)
     invalid_mask = np.logical_or((pred_coor[:, 0] > pred_coor[:, 2]),
                                  (pred_coor[:, 1] > pred_coor[:, 3]))
     pred_coor[invalid_mask] = 0

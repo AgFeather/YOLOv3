@@ -146,11 +146,12 @@ class YOLOV3(object):
                                  (batch_size, output_size, output_size,
                                   self.anchor_per_scale, 5 + self.num_class))
 
-        conv_raw_dxdy = conv_output[:, :, :, :, 0:2]
-        conv_raw_dwdh = conv_output[:, :, :, :, 2:4]
+        conv_raw_dxdy = conv_output[:, :, :, :, 0:2] # 中心位置的偏移量
+        conv_raw_dwdh = conv_output[:, :, :, :, 2:4] # 预测框长宽的偏移量
         conv_raw_conf = conv_output[:, :, :, :, 4:5]
         conv_raw_prob = conv_output[:, :, :, :, 5:]
 
+        # 画网格。其中，output_size 等于 13、26 或者 52
         y = tf.tile(
             tf.range(output_size, dtype=tf.int32)[:, tf.newaxis],
             [1, output_size])
@@ -162,12 +163,14 @@ class YOLOV3(object):
                             axis=-1)
         xy_grid = tf.tile(xy_grid[tf.newaxis, :, :, tf.newaxis, :],
                           [batch_size, 1, 1, self.anchor_per_scale, 1])
-        xy_grid = tf.cast(xy_grid, tf.float32)
+        xy_grid = tf.cast(xy_grid, tf.float32) # 计算网格左上角的位置,即C_x和C_y
 
+        # 根据公式计算预测框的中心位置
         pred_xy = (tf.sigmoid(conv_raw_dxdy) + xy_grid) * stride
+        # 根据公式计算预测框的长和宽大小
         pred_wh = (tf.exp(conv_raw_dwdh) * anchors) * stride
+        
         pred_xywh = tf.concat([pred_xy, pred_wh], axis=-1)
-
         pred_conf = tf.sigmoid(conv_raw_conf)
         pred_prob = tf.sigmoid(conv_raw_prob)
 

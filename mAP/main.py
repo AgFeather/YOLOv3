@@ -78,8 +78,6 @@ if not args.no_plot:
 """
  throw error and exit
 """
-
-
 def error(msg):
     print(msg)
     sys.exit(0)
@@ -88,8 +86,6 @@ def error(msg):
 """
  check if the number is a float between 0.0 and 1.0
 """
-
-
 def is_float_between_0_and_1(value):
     try:
         val = float(value)
@@ -107,19 +103,17 @@ def is_float_between_0_and_1(value):
        precision monotonically decreasing
   2nd) We compute the AP as the area under this curve by numerical integration.
 """
-
-
 def voc_ap(rec, prec):
     """
-  --- Official matlab code VOC2012---
-  mrec=[0 ; rec ; 1];
-  mpre=[0 ; prec ; 0];
-  for i=numel(mpre)-1:-1:1
-      mpre(i)=max(mpre(i),mpre(i+1));
-  end
-  i=find(mrec(2:end)~=mrec(1:end-1))+1;
-  ap=sum((mrec(i)-mrec(i-1)).*mpre(i));
-  """
+    --- Official matlab code VOC2012---
+    mrec=[0 ; rec ; 1];
+    mpre=[0 ; prec ; 0];
+    for i=numel(mpre)-1:-1:1
+        mpre(i)=max(mpre(i),mpre(i+1));
+    end
+    i=find(mrec(2:end)~=mrec(1:end-1))+1;
+    ap=sum((mrec(i)-mrec(i-1)).*mpre(i));
+    """
     rec.insert(0, 0.0)  # insert 0.0 at begining of list
     rec.append(1.0)  # insert 1.0 at end of list
     mrec = rec[:]
@@ -127,11 +121,11 @@ def voc_ap(rec, prec):
     prec.append(0.0)  # insert 0.0 at end of list
     mpre = prec[:]
     """
-   This part makes the precision monotonically decreasing
+    This part makes the precision monotonically decreasing
     (goes from the end to the beginning)
     matlab:  for i=numel(mpre)-1:-1:1
                 mpre(i)=max(mpre(i),mpre(i+1));
-  """
+    """
     # matlab indexes start in 1 but python in 0, so I have to do:
     #   range(start=(len(mpre) - 2), end=0, step=-1)
     # also the python function range excludes the end, resulting in:
@@ -139,18 +133,18 @@ def voc_ap(rec, prec):
     for i in range(len(mpre) - 2, -1, -1):
         mpre[i] = max(mpre[i], mpre[i + 1])
     """
-   This part creates a list of indexes where the recall changes
+    This part creates a list of indexes where the recall changes
     matlab:  i=find(mrec(2:end)~=mrec(1:end-1))+1;
-  """
+    """
     i_list = []
     for i in range(1, len(mrec)):
         if mrec[i] != mrec[i - 1]:
             i_list.append(i)  # if it was matlab would be i + 1
     """
-   The Average Precision (AP) is the area under the curve
+    The Average Precision (AP) is the area under the curve
     (numerical integration)
     matlab: ap=sum((mrec(i)-mrec(i-1)).*mpre(i));
-  """
+    """
     ap = 0.0
     for i in i_list:
         ap += ((mrec[i] - mrec[i - 1]) * mpre[i])
@@ -160,8 +154,6 @@ def voc_ap(rec, prec):
 """
  Convert the lines of a file to a list
 """
-
-
 def file_lines_to_list(path):
     # open txt file lines to a list
     with open(path) as f:
@@ -174,8 +166,6 @@ def file_lines_to_list(path):
 """
  Draws text in image
 """
-
-
 def draw_text_in_image(img, text, pos, color, line_width):
     font = cv2.FONT_HERSHEY_PLAIN
     fontScale = 1
@@ -190,8 +180,6 @@ def draw_text_in_image(img, text, pos, color, line_width):
 """
  Plot - adjust axes
 """
-
-
 def adjust_axes(r, t, fig, axes):
     # get text width for re-scaling
     bb = t.get_window_extent(renderer=r)
@@ -208,8 +196,6 @@ def adjust_axes(r, t, fig, axes):
 """
  Draw plot using Matplotlib
 """
-
-
 def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label,
                    output_path, to_show, plot_color, true_p_bar):
     # sort the dictionary by decreasing value, into a list of tuples
@@ -270,8 +256,8 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label,
     else:
         plt.barh(range(n_classes), sorted_values, color=plot_color)
         """
-     Write number on side of bar
-    """
+        Write number on side of bar
+        """
         fig = plt.gcf()  # gcf - get current figure
         axes = plt.gca()
         r = fig.canvas.get_renderer()
@@ -294,8 +280,8 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label,
     tick_font_size = 12
     plt.yticks(range(n_classes), sorted_keys, fontsize=tick_font_size)
     """
-   Re-scale height accordingly
-  """
+    Re-scale height accordingly
+    """
     init_height = fig.get_figheight()
     # comput the matrix height in points and inches
     dpi = fig.dpi
@@ -312,16 +298,12 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label,
     # set plot title
     plt.title(plot_title, fontsize=14)
     # set axis titles
-    # plt.xlabel('classes')
     plt.xlabel(x_label, fontsize='large')
     # adjust size of window
     fig.tight_layout()
-    # save the plot
     fig.savefig(output_path)
-    # show image
     if to_show:
         plt.show()
-    # close the plot
     plt.close()
 
 
@@ -356,7 +338,6 @@ ground_truth_files_list.sort()
 gt_counter_per_class = {}
 
 for txt_file in ground_truth_files_list:
-    #print(txt_file)
     file_id = txt_file.split(".txt", 1)[0]
     file_id = os.path.basename(os.path.normpath(file_id))
     # check if there is a correspondent predicted objects file
@@ -412,11 +393,8 @@ for txt_file in ground_truth_files_list:
         json.dump(bounding_boxes, outfile)
 
 gt_classes = list(gt_counter_per_class.keys())
-# let's sort the classes alphabetically
 gt_classes = sorted(gt_classes)
 n_classes = len(gt_classes)
-#print(gt_classes)
-#print(gt_counter_per_class)
 """
  Check format of the flag --set-class-iou (if used)
   e.g. check if class exists
@@ -473,14 +451,12 @@ for class_index, class_name in enumerate(gt_classes):
                 error_msg += " Received: " + line
                 error(error_msg)
             if tmp_class_name == class_name:
-                #print("match")
                 bbox = left + " " + top + " " + right + " " + bottom
                 bounding_boxes.append({
                     "confidence": confidence,
                     "file_id": file_id,
                     "bbox": bbox
                 })
-                #print(bounding_boxes)
     # sort predictions by decreasing confidence
     bounding_boxes.sort(key=lambda x: float(x['confidence']), reverse=True)
     with open(tmp_files_path + "/" + class_name + "_predictions.json",
@@ -498,13 +474,13 @@ with open(results_files_path + "/results.txt", 'w') as results_file:
     for class_index, class_name in enumerate(gt_classes):
         count_true_positives[class_name] = 0
         """
-     Load predictions of that class
-    """
+        Load predictions of that class
+        """
         predictions_file = tmp_files_path + "/" + class_name + "_predictions.json"
         predictions_data = json.load(open(predictions_file))
         """
-     Assign predictions to ground truth objects
-    """
+         Assign predictions to ground truth objects
+        """
         nd = len(predictions_data)
         tp = [0] * nd  # creates an array of zeros of size nd
         fp = [0] * nd
@@ -601,8 +577,8 @@ with open(results_files_path + "/results.txt", 'w') as results_file:
                 if ovmax > 0:
                     status = "INSUFFICIENT OVERLAP"
             """
-       Draw image to show animation
-      """
+            Draw image to show animation
+            """
             if show_animation:
                 height, widht = img.shape[:2]
                 # colors (OpenCV works with BGR)
@@ -675,7 +651,6 @@ with open(results_files_path + "/results.txt", 'w') as results_file:
                 # save the image with all the objects drawn to it
                 cv2.imwrite(img_cumulative_path, img_cumulative)
 
-        #print(tp)
         # compute precision/recall
         cumsum = 0
         for idx, val in enumerate(fp):
@@ -685,15 +660,12 @@ with open(results_files_path + "/results.txt", 'w') as results_file:
         for idx, val in enumerate(tp):
             tp[idx] += cumsum
             cumsum += val
-        #print(tp)
         rec = tp[:]
         for idx, val in enumerate(tp):
             rec[idx] = float(tp[idx]) / gt_counter_per_class[class_name]
-        #print(rec)
         prec = tp[:]
         for idx, val in enumerate(tp):
             prec[idx] = float(tp[idx]) / (fp[idx] + tp[idx])
-        #print(prec)
 
         ap, mrec, mprec = voc_ap(rec, prec)
         sum_AP += ap
@@ -701,18 +673,16 @@ with open(results_files_path + "/results.txt", 'w') as results_file:
             ap * 100
         ) + " = " + class_name + " AP  "  #class_name + " AP = {0:.2f}%".format(ap*100)
         """
-     Write to results.txt
-    """
+        Write to results.txt
+        """
         rounded_prec = ['%.2f' % elem for elem in prec]
         rounded_rec = ['%.2f' % elem for elem in rec]
         results_file.write(text + "\n Precision: " + str(rounded_prec) +
                            "\n Recall   :" + str(rounded_rec) + "\n\n")
-        if not args.quiet:
-            print(text)
         ap_dictionary[class_name] = ap
         """
-     Draw plot
-    """
+        Draw plot
+        """
         if draw_plot:
             plt.plot(rec, prec, '-o')
             # add a new penultimate point to the list (mrec[-2], 0.0)
@@ -816,7 +786,7 @@ for class_name in pred_classes:
     # if class exists in predictions but not in ground-truth then there are no true positives in that class
     if class_name not in gt_classes:
         count_true_positives[class_name] = 0
-#print(count_true_positives)
+
 """
  Plot the total number of occurences of each class in the "predicted" folder
 """

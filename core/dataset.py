@@ -221,7 +221,7 @@ class Dataset(object):
             np.zeros((self.train_output_sizes[i], self.train_output_sizes[i],
                       self.anchor_per_scale, 5 + self.num_classes))
             for i in range(3)
-        ]
+        ] #[(13,13,3,85), (26,26,3,85), (52,52,3,85)]
         #bboxes_xywh(3, 150, 4)表示一张图片中最多可以存放(3, 150)个真实框
         bboxes_xywh = [
             np.zeros((self.max_bbox_per_scale, 4)) for _ in range(3)
@@ -229,8 +229,7 @@ class Dataset(object):
         bbox_count = np.zeros((3, ))  # 对应3种网格尺寸的bounding box数量
 
         for bbox in bboxes:  # 对图片中的每个真实框处理
-            bbox_coordinate = bbox[:
-                                   4]  #coco数据集每个bbox的坐标(x_min, y_min, x_max, y_max)
+            bbox_coordinate = bbox[:4]  #(x_min, y_min, x_max, y_max)
             bbox_class_index = bbox[4]
 
             # 对 class label进行 smooth_onehot
@@ -240,14 +239,11 @@ class Dataset(object):
                                            1.0 / self.num_classes)
             deta = 0.01
             smooth_onehot = onehot * (1 - deta) + deta * uniform_distribution
-            # 得到对bbox坐标进行转换，得到中心坐标和宽高：(center_x, center_y, width, height)
-            # 计算中心点坐标(x,y) = ((x_max, y_max) + (x_min, y_min)) * 0.5
-            # 计算宽高(w,h) = (x_max, y_max) - (x_min, y_min)
-            # 拼接成一个数组(x, y, w, h)
+
+            # 计算中心点坐标, 计算宽高, 拼接成一个数组(x, y, w, h)
             bbox_xywh = np.concatenate(
                 [(bbox_coordinate[2:] + bbox_coordinate[:2]) * 0.5,
-                 bbox_coordinate[2:] - bbox_coordinate[:2]],
-                axis=-1)
+                 bbox_coordinate[2:] - bbox_coordinate[:2]], axis=-1)
 
             # 按8，16，32下采样比例对中心点以及宽高进行缩放,shape = (3, 4)
             bbox_xywh_scaled = 1.0 * bbox_xywh[
@@ -257,12 +253,12 @@ class Dataset(object):
             iou = []
             exist_positive = False
             for i in range(
-                    3):  # 对于给定的bbox，遍历其三个尺度sbbox, mbbox, lbbox，找到对应的anchors
-                anchors_xywh = np.zeros((self.anchor_per_scale, 4))
+                    3):  # 对于一个bbox，遍历其sbbox, mbbox, lbbox，找到对应的anchors
+                anchors_xywh = np.zeros((self.anchor_per_scale, 4)) # (3, 4)
                 anchors_xywh[:, 0:2] = np.floor(
                     bbox_xywh_scaled[i, 0:2]).astype(
-                        np.int32) + 0.5  # 找到bbox对应的anchors的中心坐标
-                anchors_xywh[:, 2:4] = self.anchors[i]
+                        np.int32) + 0.5  # 找到bbox在尺度i下对应的anchors的中心坐标
+                anchors_xywh[:, 2:4] = self.anchors[i] # 添加i尺度下3个anchor的预订宽高
 
                 # 计算当前该anchor和true label的iou值
                 iou_scale = self.bbox_iou(bbox_xywh_scaled[i][np.newaxis, :],
@@ -270,8 +266,8 @@ class Dataset(object):
                 iou.append(iou_scale)
                 iou_mask = iou_scale > 0.3
 
-                if np.any(iou_mask):
-                    # 根据真实框的坐标信息来计算所属网格左上角的位置. xind, yind其实就是网格的坐标
+                if np.any(iou_mask): # 三个anchor中存在最少一个和true bbox的iou大于阈值
+                    # 根据真实框的坐标信息来计算所属网格左上角的位置坐标
                     xind, yind = np.floor(bbox_xywh_scaled[i, 0:2]).astype(
                         np.int32)
 
