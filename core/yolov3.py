@@ -169,11 +169,12 @@ class YOLOV3(object):
         pred_xy = (tf.sigmoid(conv_raw_dxdy) + xy_grid) * stride
         # 根据公式计算预测框的长和宽大小
         pred_wh = (tf.exp(conv_raw_dwdh) * anchors) * stride
-        
+
         pred_xywh = tf.concat([pred_xy, pred_wh], axis=-1)
         pred_conf = tf.sigmoid(conv_raw_conf)
         pred_prob = tf.sigmoid(conv_raw_prob)
-
+        print(pred_conf[:10])
+        print(pred_prob[:5])
         return tf.concat([pred_xywh, pred_conf, pred_prob], axis=-1)
 
     def focal(self, target, actual, alpha=1, gamma=2):

@@ -472,15 +472,11 @@ with open(results_files_path + "/results.txt", 'w') as results_file:
     results_file.write("# AP and precision/recall per class\n")
     count_true_positives = {}
     for class_index, class_name in enumerate(gt_classes):
+      # 遍历每个被预测到的类
         count_true_positives[class_name] = 0
-        """
-        Load predictions of that class
-        """
         predictions_file = tmp_files_path + "/" + class_name + "_predictions.json"
         predictions_data = json.load(open(predictions_file))
-        """
-         Assign predictions to ground truth objects
-        """
+
         nd = len(predictions_data)
         tp = [0] * nd  # creates an array of zeros of size nd
         fp = [0] * nd
@@ -518,13 +514,13 @@ with open(results_files_path + "/results.txt", 'w') as results_file:
             # assign prediction to ground truth object if any
             #   open ground-truth with that file_id
             gt_file = tmp_files_path + "/" + file_id + "_ground_truth.json"
-            ground_truth_data = json.load(open(gt_file))
+            ground_truth_data = json.load(open(gt_file)) # 找到对该类的预测所对应的gt文件
             ovmax = -1
             gt_match = -1
             # load prediction bounding-box
             bb = [float(x) for x in prediction["bbox"].split()]
             for obj in ground_truth_data:
-                # look for a class_name match
+                # 遍历该测试图片中所有的object annotation
                 if obj["class_name"] == class_name:
                     bbgt = [float(x) for x in obj["bbox"].split()]
                     bi = [
@@ -710,8 +706,6 @@ with open(results_files_path + "/results.txt", 'w') as results_file:
             # Alternative option -> wait for button to be pressed
             #while not plt.waitforbuttonpress(): pass # wait for key display
             # Alternative option -> normal display
-            #plt.show()
-            # save the plot
             fig.savefig(results_files_path + "/classes/" + class_name + ".png")
             plt.cla()  # clear axes for next plot
 
@@ -740,13 +734,10 @@ for txt_file in predicted_files_list:
         # check if class is in the ignore list, if yes skip
         if class_name in args.ignore:
             continue
-        # count that object
         if class_name in pred_counter_per_class:
             pred_counter_per_class[class_name] += 1
         else:
-            # if class didn't exist yet
             pred_counter_per_class[class_name] = 1
-#print(pred_counter_per_class)
 pred_classes = list(pred_counter_per_class.keys())
 """
  Plot the total number of occurences of each class in the ground-truth
