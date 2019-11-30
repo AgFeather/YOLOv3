@@ -100,15 +100,41 @@ def draw_bbox(image,
     return image
 
 
-def bboxes_iou(boxes1, boxes2):
+def bbox_iou(boxes1, boxes2):
+    # 计算两个bbox的iou 输入的bbox格式为(center_x, center_y, w, h)
+    boxes1 = np.array(boxes1)
+    boxes2 = np.array(boxes2)
+    # 计算两个bbox的面积
+    boxes1_area = boxes1[..., 2] * boxes1[..., 3]
+    boxes2_area = boxes2[..., 2] * boxes2[..., 3]
+    # 将两个bbox的坐标从(center_x, center_y, w, h)转换成(min_x, min_y , max_x, max_y)
+    boxes1 = np.concatenate([
+        boxes1[..., :2] - boxes1[..., 2:] * 0.5,
+        boxes1[..., :2] + boxes1[..., 2:] * 0.5], axis=-1)
+    boxes2 = np.concatenate([
+        boxes2[..., :2] - boxes2[..., 2:] * 0.5,
+        boxes2[..., :2] + boxes2[..., 2:] * 0.5], axis=-1)
 
+    # 找到两个重叠bbox的最左上和最右下坐标
+    left_up = np.maximum(boxes1[..., :2], boxes2[..., :2])
+    right_down = np.minimum(boxes1[..., 2:], boxes2[..., 2:])
+
+    inter_section = np.maximum(right_down - left_up, 0.0)
+    inter_area = inter_section[..., 0] * inter_section[..., 1]
+    union_area = boxes1_area + boxes2_area - inter_area
+
+    return inter_area / union_area
+
+
+def bboxes_iou(boxes1, boxes2):
+    # 计算两个bbox的iou 输入的bbox格式为(min_x, min_y, max_x, max_y)
     boxes1 = np.array(boxes1)
     boxes2 = np.array(boxes2)
 
-    boxes1_area = (boxes1[..., 2] - boxes1[..., 0]) * (boxes1[..., 3] -
-                                                       boxes1[..., 1])
-    boxes2_area = (boxes2[..., 2] - boxes2[..., 0]) * (boxes2[..., 3] -
-                                                       boxes2[..., 1])
+    boxes1_area = (boxes1[..., 2] - boxes1[..., 0]) * \
+                  (boxes1[..., 3] - boxes1[..., 1])
+    boxes2_area = (boxes2[..., 2] - boxes2[..., 0]) * \
+                  (boxes2[..., 3] - boxes2[..., 1])
 
     left_up = np.maximum(boxes1[..., :2], boxes2[..., :2])
     right_down = np.minimum(boxes1[..., 2:], boxes2[..., 2:])
@@ -126,7 +152,6 @@ def read_pb_return_tensors(graph, pb_file, return_elements):
     with tf.gfile.FastGFile(pb_file, 'rb') as f:
         frozen_graph_def = tf.GraphDef()
         frozen_graph_def.ParseFromString(f.read())
-
     with graph.as_default():
         return_elements = tf.import_graph_def(frozen_graph_def,
                                               return_elements=return_elements)

@@ -125,10 +125,7 @@ class YOLOV3(object):
         conv_sbbox = layers.convolution_layer(
             conv_sobj_branch,
             (1, 1, 256, self.anchor_per_scale * (self.num_class + 5)),
-            self.trainable,
-            'conv_sbbox',
-            activate=False,
-            bn=False)
+            self.trainable, 'conv_sbbox', activate=False, bn=False)
         return conv_lbbox, conv_mbbox, conv_sbbox
 
     def decode(self, conv_output, anchors, stride):
@@ -159,8 +156,7 @@ class YOLOV3(object):
             tf.range(output_size, dtype=tf.int32)[tf.newaxis, :],
             [output_size, 1])
 
-        xy_grid = tf.concat([x[:, :, tf.newaxis], y[:, :, tf.newaxis]],
-                            axis=-1)
+        xy_grid = tf.concat([x[:, :, tf.newaxis], y[:, :, tf.newaxis]], axis=-1)
         xy_grid = tf.tile(xy_grid[tf.newaxis, :, :, tf.newaxis, :],
                           [batch_size, 1, 1, self.anchor_per_scale, 1])
         xy_grid = tf.cast(xy_grid, tf.float32) # 计算网格左上角的位置,即C_x和C_y
@@ -173,8 +169,6 @@ class YOLOV3(object):
         pred_xywh = tf.concat([pred_xy, pred_wh], axis=-1)
         pred_conf = tf.sigmoid(conv_raw_conf)
         pred_prob = tf.sigmoid(conv_raw_prob)
-        print(pred_conf[:10])
-        print(pred_prob[:5])
         return tf.concat([pred_xywh, pred_conf, pred_prob], axis=-1)
 
     def focal(self, target, actual, alpha=1, gamma=2):
@@ -182,33 +176,29 @@ class YOLOV3(object):
         return focal_loss
 
     def bbox_giou(self, boxes1, boxes2):
-
         boxes1 = tf.concat([
             boxes1[..., :2] - boxes1[..., 2:] * 0.5,
             boxes1[..., :2] + boxes1[..., 2:] * 0.5
-        ],
-                           axis=-1)
+        ], axis=-1)
         boxes2 = tf.concat([
             boxes2[..., :2] - boxes2[..., 2:] * 0.5,
             boxes2[..., :2] + boxes2[..., 2:] * 0.5
-        ],
-                           axis=-1)
+        ], axis=-1)
 
         boxes1 = tf.concat([
             tf.minimum(boxes1[..., :2], boxes1[..., 2:]),
             tf.maximum(boxes1[..., :2], boxes1[..., 2:])
-        ],
-                           axis=-1)
+        ], axis=-1)
+
         boxes2 = tf.concat([
             tf.minimum(boxes2[..., :2], boxes2[..., 2:]),
             tf.maximum(boxes2[..., :2], boxes2[..., 2:])
-        ],
-                           axis=-1)
+        ], axis=-1)
 
-        boxes1_area = (boxes1[..., 2] - boxes1[..., 0]) * (boxes1[..., 3] -
-                                                           boxes1[..., 1])
-        boxes2_area = (boxes2[..., 2] - boxes2[..., 0]) * (boxes2[..., 3] -
-                                                           boxes2[..., 1])
+        boxes1_area = (boxes1[..., 2] - boxes1[..., 0]) * \
+                      (boxes1[..., 3] - boxes1[..., 1])
+        boxes2_area = (boxes2[..., 2] - boxes2[..., 0]) * \
+                      (boxes2[..., 3] - boxes2[..., 1])
 
         left_up = tf.maximum(boxes1[..., :2], boxes2[..., :2])
         right_down = tf.minimum(boxes1[..., 2:], boxes2[..., 2:])
@@ -233,14 +223,10 @@ class YOLOV3(object):
 
         boxes1 = tf.concat([
             boxes1[..., :2] - boxes1[..., 2:] * 0.5,
-            boxes1[..., :2] + boxes1[..., 2:] * 0.5
-        ],
-                           axis=-1)
+            boxes1[..., :2] + boxes1[..., 2:] * 0.5], axis=-1)
         boxes2 = tf.concat([
             boxes2[..., :2] - boxes2[..., 2:] * 0.5,
-            boxes2[..., :2] + boxes2[..., 2:] * 0.5
-        ],
-                           axis=-1)
+            boxes2[..., :2] + boxes2[..., 2:] * 0.5], axis=-1)
 
         left_up = tf.maximum(boxes1[..., :2], boxes2[..., :2])
         right_down = tf.minimum(boxes1[..., 2:], boxes2[..., 2:])
@@ -273,11 +259,8 @@ class YOLOV3(object):
         giou = tf.expand_dims(self.bbox_giou(pred_xywh, label_xywh), axis=-1)
         input_size = tf.cast(input_size, tf.float32)
 
-        bbox_loss_scale = 2.0 - 1.0 * label_xywh[:, :, :, :, 2:
-                                                 3] * label_xywh[:, :, :, :, 3:
-                                                                 4] / (
-                                                                     input_size
-                                                                     **2)
+        bbox_loss_scale = 2.0 - 1.0 * label_xywh[:, :, :, :, 2:3] \
+                          * label_xywh[:, :, :, :, 3:4] / (input_size**2)
         giou_loss = respond_bbox * bbox_loss_scale * (1 - giou)
 
         iou = self.bbox_iou(

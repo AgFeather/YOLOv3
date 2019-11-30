@@ -119,7 +119,7 @@ class YoloTrain(object):
             print('=> Now it starts to train YOLOV3 from scratch ...')
             self.first_stage_epochs = 0
 
-        for epoch in range(1, 1+self.first_stage_epochs+self.second_stage_epochs):
+        for epoch in range(1, 1+self.first_stage_epochs + self.second_stage_epochs):
             if epoch <= self.first_stage_epochs:
                 train_op = self.train_op_with_frozen_variables
             else:
